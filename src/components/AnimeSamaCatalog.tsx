@@ -13,9 +13,12 @@ import {
   Sparkles, 
   CheckCircle2,
   ShieldCheck,
-  X
+  X,
+  Server,
+  Settings
 } from 'lucide-react';
 import { CurrentPlayingEpisode } from './CleanPlayer';
+import { findPreloadedAnime } from '../data/animeData';
 
 export interface SeasonItem {
   name: string;
@@ -74,6 +77,16 @@ const PRESET_EXAMPLES = [
   },
 ];
 
+// Détection intelligente de l'adresse de l'API
+export function getApiBase(): string {
+  if (typeof window === 'undefined') return '';
+  // Si hébergé sur GitHub Pages (*.github.io), cibler le backend Cloud Run avec CORS
+  if (window.location.hostname.includes('github.io')) {
+    return 'https://ais-dev-47dswayw2ex543j2f2eodr-146931597221.europe-west2.run.app';
+  }
+  return '';
+}
+
 export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
   onPlayEpisode,
   onCastStream,
@@ -103,6 +116,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
 
   const [resolvingEpNumber, setResolvingEpNumber] = useState<number | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [isUsingPreloaded, setIsUsingPreloaded] = useState<boolean>(false);
 
   // Charger le catalogue
   const fetchCatalogue = async (targetUrl: string) => {
@@ -114,9 +128,24 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
     setSelectedSeason(null);
     setAvailableSeasonPlayers([]);
     setSelectedPlayerIndex(null);
+    setIsUsingPreloaded(false);
 
+    // 1. Vérifier d'abord si nous avons des données pré-chargées garanties
+    const preloaded = findPreloadedAnime(targetUrl);
+    if (preloaded) {
+      setData(preloaded);
+      setIsUsingPreloaded(true);
+      if (preloaded.seasons && preloaded.seasons.length > 0) {
+        loadSeasonEpisodes(preloaded.url, preloaded.seasons[0], preloaded);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // 2. Sinon, appel de l'API avec fallback transparent
     try {
-      const res = await fetch(`/api/animesama/catalogue?url=${encodeURIComponent(targetUrl.trim())}`);
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/animesama/catalogue?url=${encodeURIComponent(targetUrl.trim())}`);
       const json = await res.json();
       if (!res.ok) {
         throw new Error(json.error || 'Erreur lors du chargement du catalogue');
@@ -126,23 +155,44 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
         loadSeasonEpisodes(json.url, json.seasons[0]);
       }
     } catch (err: any) {
-      setError(err.message || 'Impossible de récupérer la fiche Anime-Sama.');
+      // Si échec réseau, tenter un repli pré-chargé sur mot clé
+      const fallback = findPreloadedAnime(targetUrl);
+      if (fallback) {
+        setData(fallback);
+        setIsUsingPreloaded(true);
+        if (fallback.seasons && fallback.seasons.length > 0) {
+          loadSeasonEpisodes(fallback.url, fallback.seasons[0], fallback);
+        }
+      } else {
+        setError(err.message || 'Impossible de récupérer la fiche Anime-Sama.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   // Charger les épisodes d'une saison & Déterminer automatiquement le meilleur lecteur (Point 3)
-  const loadSeasonEpisodes = async (baseUrl: string, season: SeasonItem) => {
+  const loadSeasonEpisodes = async (baseUrl: string, season: SeasonItem, preloadedRef?: any) => {
     setSelectedSeason(season);
     setEpisodesLoading(true);
     setEpisodes([]);
     setAvailableSeasonPlayers([]);
     setSelectedPlayerIndex(null);
 
+    // 1. Vérifier si les épisodes sont déjà disponibles en cache local pré-chargé
+    const activeData = preloadedRef || data;
+    if (activeData?.seasonEpisodes && activeData.seasonEpisodes[season.path]) {
+      const cachedEps: EpisodeInfo[] = activeData.seasonEpisodes[season.path];
+      applyEpisodes(cachedEps, season.name, activeData.title);
+      setEpisodesLoading(false);
+      return;
+    }
+
+    // 2. Sinon, appel API
     try {
+      const apiBase = getApiBase();
       const res = await fetch(
-        `/api/animesama/episodes?catalogueUrl=${encodeURIComponent(baseUrl)}&seasonPath=${encodeURIComponent(season.path)}`
+        `${apiBase}/api/animesama/episodes?catalogueUrl=${encodeURIComponent(baseUrl)}&seasonPath=${encodeURIComponent(season.path)}`
       );
       const json = await res.json();
       if (!res.ok) {
@@ -150,50 +200,55 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
       }
 
       const eps: EpisodeInfo[] = json.episodes || [];
-      setEpisodes(eps);
-      onEpisodesLoaded?.(eps, data?.title || 'Anime', season.name);
-
-      // Algorithme de sélection automatique du meilleur lecteur (Point 3)
-      // 1. Compter la présence de chaque lecteur sur l'ensemble des épisodes
-      const playerStats: Record<number, { name: string; count: number }> = {};
-      eps.forEach(ep => {
-        ep.players.forEach(p => {
-          if (!playerStats[p.playerIndex]) {
-            playerStats[p.playerIndex] = { name: p.name, count: 0 };
-          }
-          playerStats[p.playerIndex].count++;
-        });
-      });
-
-      const totalEps = eps.length;
-      const sortedPlayers = Object.entries(playerStats).map(([idx, stat]) => {
-        const playerIndex = parseInt(idx);
-        const nameLower = stat.name.toLowerCase();
-        // Privilégier Vidmoly (HLS sans pub) ou Sendvid (MP4 direct)
-        const isRecommended = (nameLower.includes('vidmoly') || nameLower.includes('ansembed') || nameLower.includes('sendvid')) && stat.count >= totalEps * 0.8;
-        return {
-          playerIndex,
-          name: stat.name,
-          count: stat.count,
-          isRecommended,
-        };
-      }).sort((a, b) => {
-        // En premier les recommandés, puis ceux qui couvrent 100% des épisodes, puis par nombre décroissant
-        if (a.isRecommended && !b.isRecommended) return -1;
-        if (!a.isRecommended && b.isRecommended) return 1;
-        return b.count - a.count;
-      });
-
-      setAvailableSeasonPlayers(sortedPlayers);
-
-      // Sélectionner automatiquement le lecteur n°1
-      if (sortedPlayers.length > 0) {
-        setSelectedPlayerIndex(sortedPlayers[0].playerIndex);
-      }
+      applyEpisodes(eps, season.name, data?.title || 'Anime');
     } catch (err: any) {
-      console.warn('Erreur épisodes:', err);
+      console.warn('Erreur épisodes API:', err);
+      // Tentative de secours pré-chargé
+      const fallback = findPreloadedAnime(baseUrl);
+      if (fallback?.seasonEpisodes && fallback.seasonEpisodes[season.path]) {
+        applyEpisodes(fallback.seasonEpisodes[season.path], season.name, fallback.title);
+      }
     } finally {
       setEpisodesLoading(false);
+    }
+  };
+
+  const applyEpisodes = (eps: EpisodeInfo[], seasonName: string, animeTitle: string) => {
+    setEpisodes(eps);
+    onEpisodesLoaded?.(eps, animeTitle, seasonName);
+
+    // Algorithme de sélection automatique du meilleur lecteur (Point 3)
+    const playerStats: Record<number, { name: string; count: number }> = {};
+    eps.forEach(ep => {
+      ep.players.forEach(p => {
+        if (!playerStats[p.playerIndex]) {
+          playerStats[p.playerIndex] = { name: p.name, count: 0 };
+        }
+        playerStats[p.playerIndex].count++;
+      });
+    });
+
+    const totalEps = eps.length;
+    const sortedPlayers = Object.entries(playerStats).map(([idx, stat]) => {
+      const playerIndex = parseInt(idx);
+      const nameLower = stat.name.toLowerCase();
+      const isRecommended = (nameLower.includes('vidmoly') || nameLower.includes('ansembed') || nameLower.includes('sendvid')) && stat.count >= totalEps * 0.8;
+      return {
+        playerIndex,
+        name: stat.name,
+        count: stat.count,
+        isRecommended,
+      };
+    }).sort((a, b) => {
+      if (a.isRecommended && !b.isRecommended) return -1;
+      if (!a.isRecommended && b.isRecommended) return 1;
+      return b.count - a.count;
+    });
+
+    setAvailableSeasonPlayers(sortedPlayers);
+
+    if (sortedPlayers.length > 0) {
+      setSelectedPlayerIndex(sortedPlayers[0].playerIndex);
     }
   };
 
@@ -211,15 +266,14 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
   const handleLaunchEpisode = async (ep: EpisodeInfo) => {
     if (!data || !selectedSeason) return;
 
-    // Trouver le lecteur sélectionné pour cet épisode, ou le premier disponible
     const chosenPlayer = ep.players.find(p => p.playerIndex === selectedPlayerIndex) || ep.players[0];
     if (!chosenPlayer) return;
 
     setResolvingEpNumber(ep.number);
 
     try {
-      // Résoudre le stream direct (Sendvid MP4 ou Vidmoly HLS) pour lecture 100% sans popup
-      const res = await fetch(`/api/animesama/resolve?embedUrl=${encodeURIComponent(chosenPlayer.embedUrl)}`);
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/animesama/resolve?embedUrl=${encodeURIComponent(chosenPlayer.embedUrl)}`);
       const resolveJson = await res.json();
 
       if (resolveJson.success && resolveJson.streamUrl) {
@@ -236,7 +290,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
           mimeType: resolveJson.type,
         });
       } else {
-        // Fallback lecteur sandbox sécurisé sans popup
         onPlayEpisode({
           animeTitle: data.title,
           seasonName: selectedSeason.name,
@@ -284,6 +337,13 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
               Entrez l'URL d'une fiche anime pour extraire automatiquement toutes les saisons, films et épisodes sans popup.
             </p>
           </div>
+
+          {isUsingPreloaded && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[11px] font-medium self-start sm:self-auto">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Mode Rapide Sécurisé</span>
+            </span>
+          )}
         </div>
 
         {/* Input avec bouton Analyser */}
@@ -310,7 +370,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
         <div className="pt-2 border-t border-slate-800/80">
           <div className="text-[11px] text-slate-400 mb-2 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Exemples rapides :</span>
+            <span>Exemples rapides disponibles immédiatement :</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {PRESET_EXAMPLES.map((ex) => (
@@ -445,7 +505,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
                 </span>
               </div>
 
-              {/* Sélecteur de lecteur avec badge de recommandation */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 {availableSeasonPlayers.map((player) => {
                   const isSelected = selectedPlayerIndex === player.playerIndex;
@@ -491,7 +550,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
                 )}
               </div>
 
-              {/* Recherche rapide d'épisode */}
               {episodes.length > 6 && (
                 <div className="relative w-full sm:w-48">
                   <input
@@ -513,7 +571,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
               )}
             </div>
 
-            {/* État de chargement des épisodes */}
             {episodesLoading ? (
               <div className="py-12 flex flex-col items-center justify-center text-slate-400 text-xs gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-400" />

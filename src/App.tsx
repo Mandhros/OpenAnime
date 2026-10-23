@@ -19,7 +19,7 @@ import { useGoogleCast } from './hooks/useGoogleCast';
 import { CleanPlayer, CurrentPlayingEpisode } from './components/CleanPlayer';
 import { CastRemote } from './components/CastRemote';
 import { PWAInstallButton } from './components/PWAInstallButton';
-import { AnimeSamaCatalog, EpisodeInfo } from './components/AnimeSamaCatalog';
+import { AnimeSamaCatalog, EpisodeInfo, getApiBase } from './components/AnimeSamaCatalog';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'catalog' | 'player'>('catalog');
@@ -84,7 +84,8 @@ export default function App() {
 
     try {
       showToast(`Chargement de l'épisode ${epNumber}...`);
-      const res = await fetch(`/api/animesama/resolve?embedUrl=${encodeURIComponent(player.embedUrl)}`);
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/animesama/resolve?embedUrl=${encodeURIComponent(player.embedUrl)}`);
       const json = await res.json();
 
       if (json.success && json.streamUrl) {
