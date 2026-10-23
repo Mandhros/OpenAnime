@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { CurrentPlayingEpisode } from './CleanPlayer';
 import { findPreloadedAnime } from '../data/animeData';
+import { resolveStreamUrl } from '../utils/streamResolver';
 
 export interface SeasonItem {
   name: string;
@@ -62,6 +63,11 @@ interface AnimeSamaCatalogProps {
 }
 
 const PRESET_EXAMPLES = [
+  {
+    name: 'Frieren',
+    url: 'https://anime-sama.to/catalogue/frieren/',
+    badge: '28 Épisodes · S1',
+  },
   {
     name: "JoJo's Bizarre Adventure",
     url: 'https://anime-sama.to/catalogue/jojos-bizarre-adventure/',
@@ -266,21 +272,20 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
 
     try {
       const apiBase = getApiBase();
-      const res = await fetch(`${apiBase}/api/animesama/resolve?embedUrl=${encodeURIComponent(chosenPlayer.embedUrl)}`);
-      const resolveJson = await res.json();
+      const resolved = await resolveStreamUrl(chosenPlayer.embedUrl, apiBase);
 
-      if (resolveJson.success && resolveJson.streamUrl) {
+      if (resolved.success && resolved.streamUrl) {
         onPlayEpisode({
           animeTitle: data.title,
           seasonName: selectedSeason.name,
           episodeNumber: ep.number,
           totalEpisodes: episodes.length,
           title: ep.title,
-          streamUrl: resolveJson.streamUrl,
+          streamUrl: resolved.streamUrl,
           embedUrl: chosenPlayer.embedUrl,
           isDirectStream: true,
-          playerName: chosenPlayer.name,
-          mimeType: resolveJson.type,
+          playerName: resolved.host || chosenPlayer.name,
+          mimeType: resolved.type,
         });
       } else {
         onPlayEpisode({

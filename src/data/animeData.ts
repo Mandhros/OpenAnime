@@ -20,6 +20,7 @@ export function findPreloadedAnime(url: string): PreloadedAnimeRecord | null {
     if (lower.includes('overlord') && key.includes('overlord')) return data;
     if (lower.includes('jojo') && key.includes('jojo')) return data;
     if ((lower.includes('gacha') || lower.includes('9999')) && (key.includes('gacha') || key.includes('9999'))) return data;
+    if ((lower.includes('frieren') || lower.includes('sousou')) && key.includes('frieren')) return data;
   }
 
   return null;

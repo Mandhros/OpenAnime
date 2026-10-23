@@ -6899,5 +6899,621 @@
         }
       ]
     }
+  },
+  "https://anime-sama.to/catalogue/frieren/": {
+    "url": "https://anime-sama.to/catalogue/frieren/",
+    "title": "Frieren",
+    "alterTitles": "Sousou no Frieren, Frieren: Beyond Journey's End",
+    "poster": "https://image.tmdb.org/t/p/w342/j8K7vgF3Kp5T6EwJvez9B4it6CB.jpg",
+    "banner": "https://cdn.jsdelivr.net/gh/Anime-Sama/IMG@img/contenu/frieren.jpg",
+    "meta": "2023 · Série TV · MADHOUSE · Terminé",
+    "synopsis": "Le jeune héros Himmel et ses compagnons, l'elfe Frieren, le nain Eisen et le prêtre Heiter, rentrent victorieux de leur combats contre le roi des démons...",
+    "seasonsCount": 2,
+    "seasons": [
+      {
+        "name": "Saison 1",
+        "path": "saison1/vostfr",
+        "fullUrl": "https://anime-sama.to/catalogue/frieren/saison1/vostfr/",
+        "type": "saison"
+      },
+      {
+        "name": "Saison 2",
+        "path": "saison2/vostfr",
+        "fullUrl": "https://anime-sama.to/catalogue/frieren/saison2/vostfr/",
+        "type": "saison"
+      }
+    ],
+    "seasonEpisodes": {
+      "saison1/vostfr": [
+        {
+          "number": 1,
+          "title": "Épisode 1",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-ejbsz9lxez75.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-3pp9id76kssc.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/c4gbyeojdqdo"
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "title": "Épisode 2",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-cxxj30smfbbv.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-f9eht29f6d5f.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/vvin0bxcxxyg"
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "title": "Épisode 3",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-zo5ol2l8ebmg.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-qz9ibcygiqwb.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/y60ktccazoy0"
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "title": "Épisode 4",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-26xo3iivzk17.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-clxahaxtv02d.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/4zamonoynac2"
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "title": "Épisode 5",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-wko8z0kttksq.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-t776j7kb2ifl.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/fohcgsc5toil"
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "title": "Épisode 6",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-zbdb5wmsihde.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-nm31rtvl9iy7.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/2v79emfujl7e"
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "title": "Épisode 7",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-4lfryhiatz95.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-mhg6imyjgcd0.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/ckmyootgeevn"
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "title": "Épisode 8",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-6p1ii19yl104.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-adqimm79fcd3.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/jlmhihe4txse"
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "title": "Épisode 9",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-kv2btsfl3dty.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-re1mxq2o3bj8.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/fjtfvqx5gzyd"
+            }
+          ]
+        },
+        {
+          "number": 10,
+          "title": "Épisode 10",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-oj7c2rsprdc0.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-gs4p5zq793n3.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/jwvx7tlajkeq"
+            }
+          ]
+        },
+        {
+          "number": 11,
+          "title": "Épisode 11",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-jfz5zlz5vmcq.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-2ooerqrxgmm5.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/lbubypyucsi5"
+            }
+          ]
+        },
+        {
+          "number": 12,
+          "title": "Épisode 12",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-vmsfbvaoz9wl.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-dj8apmpz9vl8.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/91fhlnxm0wb8"
+            }
+          ]
+        },
+        {
+          "number": 13,
+          "title": "Épisode 13",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-rxsv9r0qij4g.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-7388n75l670p.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/kfdnyaasv9rv"
+            }
+          ]
+        },
+        {
+          "number": 14,
+          "title": "Épisode 14",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-egax71w4005r.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-fkslllfx6i3z.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/g4ae1cluwhlu"
+            }
+          ]
+        },
+        {
+          "number": 15,
+          "title": "Épisode 15",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-x7eg1geqgu2m.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-7kfbycsz2hbw.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/irz6bvs36sbi"
+            }
+          ]
+        },
+        {
+          "number": 16,
+          "title": "Épisode 16",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-fhuvqvghw1ah.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-ol0f70mg01vz.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/8vr0dsitmlg2"
+            }
+          ]
+        },
+        {
+          "number": 17,
+          "title": "Épisode 17",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-u2l99wj2dktd.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-q7aijvewb4ck.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/vc6ik1leivrm"
+            }
+          ]
+        },
+        {
+          "number": 18,
+          "title": "Épisode 18",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-6l7uuygm0v2o.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-oa04b47eumb5.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/pugxfchg04fu"
+            }
+          ]
+        },
+        {
+          "number": 19,
+          "title": "Épisode 19",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-q4e7qer4uwe8.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-i3q2ad70w4ti.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/jng1ribypwoh"
+            }
+          ]
+        },
+        {
+          "number": 20,
+          "title": "Épisode 20",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-88gps4mn09g7.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-3jw86sor9x0d.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/b35hy607me3b"
+            }
+          ]
+        },
+        {
+          "number": 21,
+          "title": "Épisode 21",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-hleqf4o1zih3.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-cawifnkjeo96.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/i6qtvzkbogwu"
+            }
+          ]
+        },
+        {
+          "number": 22,
+          "title": "Épisode 22",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-a9kcsa8rr048.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-08po3ewf8b51.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/bb2ne1kjkeg0"
+            }
+          ]
+        },
+        {
+          "number": 23,
+          "title": "Épisode 23",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-zhxa90b2lds9.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-ji6ytbca9mhq.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/oewnlh0adsff"
+            }
+          ]
+        },
+        {
+          "number": 24,
+          "title": "Épisode 24",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-np4znow7t1jz.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-a1n4g2kdvr8l.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/vypzd6e3bw3k"
+            }
+          ]
+        },
+        {
+          "number": 25,
+          "title": "Épisode 25",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-6lwzu1imehv0.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-6qjdu8qxjbwz.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/frq3fcb1xfy3"
+            }
+          ]
+        },
+        {
+          "number": 26,
+          "title": "Épisode 26",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-b6om52bxrbuc.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-inwh140og9kf.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/xrbvshovtjhz"
+            }
+          ]
+        },
+        {
+          "number": 27,
+          "title": "Épisode 27",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-rgtbu8vuum1t.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-ix5uj2chtnq4.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/soqx959thm6s"
+            }
+          ]
+        },
+        {
+          "number": 28,
+          "title": "Épisode 28",
+          "players": [
+            {
+              "playerIndex": 2,
+              "name": "Vidmoly",
+              "embedUrl": "https://ansembed.net/embed-7poz2t5yg7ve.html"
+            },
+            {
+              "playerIndex": 1,
+              "name": "Uqload",
+              "embedUrl": "https://uqload.vc/embed-cynhly43lfkg.html"
+            },
+            {
+              "playerIndex": 3,
+              "name": "Derricknation",
+              "embedUrl": "https://derricknationtop.com/e/wc3b4iu5mfuq"
+            }
+          ]
+        }
+      ]
+    }
   }
 }

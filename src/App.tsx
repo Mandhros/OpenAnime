@@ -21,6 +21,7 @@ import { CleanPlayer, CurrentPlayingEpisode } from './components/CleanPlayer';
 import { CastRemote } from './components/CastRemote';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { AnimeSamaCatalog, EpisodeInfo, getApiBase } from './components/AnimeSamaCatalog';
+import { resolveStreamUrl } from './utils/streamResolver';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'catalog' | 'player' | 'cast'>('catalog');
@@ -79,46 +80,56 @@ export default function App() {
     const targetEp = seasonEpisodes.find(e => e.number === epNumber);
     if (!targetEp) return;
 
-    // Prendre le lecteur préféré
-    const player = targetEp.players.find(p => p.name.toLowerCase().includes('vidmoly') || p.name.toLowerCase().includes('sendvid')) || targetEp.players[0];
+    // Prendre le lecteur préféré actuel s'il existe, sinon Vidmoly / Ansembed / Uqload / Sendvid, sinon le premier disponible
+    let player = targetEp.players.find(p => currentEpisode && p.name.toLowerCase() === currentEpisode.playerName.toLowerCase());
+    if (!player) {
+      player = targetEp.players.find(p => {
+        const n = p.name.toLowerCase();
+        return n.includes('vidmoly') || n.includes('ansembed') || n.includes('uqload') || n.includes('sendvid');
+      }) || targetEp.players[0];
+    }
     if (!player) return;
 
-    try {
-      showToast(`Chargement épisode ${epNumber}...`);
-      const apiBase = getApiBase();
-      const res = await fetch(`${apiBase}/api/animesama/resolve?embedUrl=${encodeURIComponent(player.embedUrl)}`);
-      const json = await res.json();
+    showToast(`Chargement épisode ${epNumber}...`);
 
-      if (json.success && json.streamUrl) {
+    // 1. Changement immédiat d'épisode pour ne JAMAIS bloquer l'interface
+    setCurrentEpisode({
+      animeTitle: currentAnimeTitle,
+      seasonName: currentSeasonName,
+      episodeNumber: targetEp.number,
+      totalEpisodes: seasonEpisodes.length,
+      title: targetEp.title,
+      streamUrl: undefined,
+      embedUrl: player.embedUrl,
+      isDirectStream: false,
+      playerName: player.name,
+    });
+
+    // 2. Résolution du flux direct sans publicité en tâche de fond
+    try {
+      const apiBase = getApiBase();
+      const resolved = await resolveStreamUrl(player.embedUrl, apiBase);
+
+      if (resolved.success && resolved.streamUrl) {
         setCurrentEpisode({
           animeTitle: currentAnimeTitle,
           seasonName: currentSeasonName,
           episodeNumber: targetEp.number,
           totalEpisodes: seasonEpisodes.length,
           title: targetEp.title,
-          streamUrl: json.streamUrl,
+          streamUrl: resolved.streamUrl,
           embedUrl: player.embedUrl,
           isDirectStream: true,
-          playerName: player.name,
-          mimeType: json.type,
+          playerName: resolved.host || player.name,
+          mimeType: resolved.type,
         });
+        showToast(`Épisode ${epNumber} prêt (Lecteur direct)`);
       } else {
-        setCurrentEpisode({
-          animeTitle: currentAnimeTitle,
-          seasonName: currentSeasonName,
-          episodeNumber: targetEp.number,
-          totalEpisodes: seasonEpisodes.length,
-          title: targetEp.title,
-          streamUrl: undefined,
-          embedUrl: player.embedUrl,
-          isDirectStream: false,
-          playerName: player.name,
-        });
+        showToast(`Épisode ${epNumber} prêt`);
       }
-
+    } catch (e) {
+      console.warn('Erreur résolution flux:', e);
       showToast(`Épisode ${epNumber} prêt`);
-    } catch {
-      showToast(`Erreur chargement épisode ${epNumber}`);
     }
   };
 
@@ -302,18 +313,18 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* Grille tactile optimisée pour écran Pixel 8 (412px) */}
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5 sm:gap-2 max-h-[300px] overflow-y-auto pr-1">
+                {/* Grille tactile optimisée pour écran Pixel 8 (412px) et Desktop */}
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[300px] overflow-y-auto p-2 rounded-xl bg-slate-950/40 border border-slate-800/40">
                   {seasonEpisodes.map((ep) => {
                     const isCur = ep.number === currentEpisode.episodeNumber;
                     return (
                       <button
                         key={ep.number}
                         onClick={() => playEpisodeByNumber(ep.number)}
-                        className={`h-11 sm:h-12 rounded-xl text-xs font-mono font-medium transition-all flex flex-col items-center justify-center active:scale-95 ${
+                        className={`h-11 sm:h-12 w-full rounded-xl text-xs font-mono font-medium transition-all flex flex-col items-center justify-center active:scale-95 box-border select-none ${
                           isCur
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-400'
-                            : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 border-2 border-blue-300 font-bold'
+                            : 'bg-slate-950 hover:bg-slate-800 hover:border-slate-700 text-slate-300 border border-slate-800'
                         }`}
                       >
                         <span className="text-[9px] opacity-70 leading-none">EP</span>

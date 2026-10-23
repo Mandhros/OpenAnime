@@ -60,6 +60,8 @@ async function startServer() {
 
   app.use(express.json());
 
+  let cachedAnimeCookie = '';
+
   // 1. Endpoint pour analyser la page catalogue d'un anime (saisons, films, OAVs, scans)
   app.get('/api/animesama/catalogue', async (req, res) => {
     try {
@@ -72,20 +74,53 @@ async function startServer() {
       let cleanUrl = targetUrl.trim();
       if (!cleanUrl.endsWith('/')) cleanUrl += '/';
 
-      const response = await fetch(cleanUrl, {
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-      });
-
-      if (!response.ok) {
-        return res.status(response.status).json({
-          error: `Échec du chargement de la page Anime-Sama (Statut ${response.status})`
+      let html = '';
+      try {
+        const response = await fetch(cleanUrl, {
+          headers: {
+            'User-Agent': USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            ...(cachedAnimeCookie ? { 'Cookie': cachedAnimeCookie } : {}),
+          },
         });
+
+        const setCookie = response.headers.get('set-cookie');
+        if (setCookie) {
+          const match = setCookie.match(/PHPSESSID=[^;]+/);
+          if (match) cachedAnimeCookie = match[0];
+        }
+
+        if (response.ok) {
+          html = await response.text();
+        }
+      } catch (fetchErr) {
+        console.warn('Scraping direct échoué, essai fallback preloaded:', fetchErr);
       }
 
-      const html = await response.text();
+      // Si Cloudflare bloque ou page introuvable, vérifier les données préchargées
+      if (!html || html.includes('Attention Required! | Cloudflare')) {
+        const preloaded = (await import('./src/data/preloadedAnimes.json', { assert: { type: 'json' } })).default as Record<string, any>;
+        const matchEntry = Object.entries(preloaded).find(([k]) => cleanUrl.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(cleanUrl.toLowerCase()));
+        if (matchEntry) {
+          const item = matchEntry[1];
+          return res.json({
+            url: cleanUrl,
+            title: item.title,
+            alterTitles: item.alterTitles || '',
+            poster: item.poster || '',
+            banner: item.banner || '',
+            meta: item.meta || '',
+            synopsis: item.synopsis || '',
+            seasonsCount: item.seasonsCount || item.seasons?.length || 0,
+            seasons: item.seasons || [],
+            scans: item.scans || [],
+          });
+        }
+      }
+
+      if (!html) {
+        return res.status(502).json({ error: 'Page inaccessible ou protégée par Cloudflare.' });
+      }
 
       // Extraction du titre principal
       const titleMatch = html.match(/<h1[^>]*id=["']titreOeuvre["'][^>]*>(.*?)<\/h1>/i);
@@ -111,7 +146,7 @@ async function startServer() {
       const synopMatch = html.match(/<div class=["']oe-synop["'][^>]*>([\s\S]*?)<\/div>/i);
       const synopsis = synopMatch ? synopMatch[1].replace(/<[^>]+>/g, '').trim() : '';
 
-      // Nettoyer les commentaires de blocs pour ne pas récupérer les exemples de code
+      // Nettoyer les commentaires de blocs
       const cleanHtml = html.replace(/\/\*[\s\S]*?\*\//g, '');
 
       // Extraction des Saisons / Films / OAVs (panneauAnime)
@@ -190,21 +225,45 @@ async function startServer() {
       const seasonUrl = base + cleanSub + (cleanSub.endsWith('/') ? '' : '/');
       const episodesJsUrl = seasonUrl + 'episodes.js';
 
-      const response = await fetch(episodesJsUrl, {
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Referer': seasonUrl,
-          'Accept': '*/*',
-        },
-      });
-
-      if (!response.ok) {
-        return res.status(response.status).json({
-          error: `Fichier episodes.js introuvable ou protégé (Statut ${response.status})`
+      let jsContent = '';
+      try {
+        const response = await fetch(episodesJsUrl, {
+          headers: {
+            'User-Agent': USER_AGENT,
+            'Referer': seasonUrl,
+            'Accept': '*/*',
+            ...(cachedAnimeCookie ? { 'Cookie': cachedAnimeCookie } : {}),
+          },
         });
+
+        if (response.ok) {
+          const text = await response.text();
+          if (!text.includes('Attention Required! | Cloudflare')) {
+            jsContent = text;
+          }
+        }
+      } catch (err) {
+        console.warn('Scraping episodes.js échoué:', err);
       }
 
-      const jsContent = await response.text();
+      // Si Cloudflare bloque, chercher dans preloadedAnimes.json
+      if (!jsContent) {
+        const preloaded = (await import('./src/data/preloadedAnimes.json', { assert: { type: 'json' } })).default as Record<string, any>;
+        const matchEntry = Object.entries(preloaded).find(([k]) => base.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(base.toLowerCase()));
+        if (matchEntry && matchEntry[1].seasonEpisodes && matchEntry[1].seasonEpisodes[seasonPath]) {
+          const eps = matchEntry[1].seasonEpisodes[seasonPath];
+          return res.json({
+            seasonUrl,
+            totalEpisodes: eps.length,
+            totalPlayers: eps[0]?.players?.length || 1,
+            episodes: eps,
+          });
+        }
+
+        return res.status(502).json({
+          error: 'Épisodes temporairement indisponibles (protection Cloudflare).'
+        });
+      }
 
       // Parser les tableaux var eps1 = [...]; var eps2 = [...];
       const playersData: Array<{
@@ -230,7 +289,6 @@ async function startServer() {
         }
       }
 
-      // Trier les lecteurs par index
       playersData.sort((a, b) => a.playerIndex - b.playerIndex);
 
       const maxEpisodes = Math.max(...playersData.map(p => p.urls.length), 0);
@@ -270,7 +328,7 @@ async function startServer() {
     }
   });
 
-  // 3. Endpoint de résolution directe de stream vidéo (Sendvid, Sibnet, etc.)
+  // 3. Endpoint de résolution directe de stream vidéo (Vidmoly, Sendvid, Sibnet, Uqload)
   app.get('/api/animesama/resolve', async (req, res) => {
     try {
       const embedUrl = req.query.embedUrl as string;
@@ -290,7 +348,8 @@ async function startServer() {
           },
         });
         const html = await vidmolyRes.text();
-        const m3u8Match = html.match(/file:\s*['"](https?:\/\/[^'"]+\.m3u8[^'"]*)['"]/i) ||
+        const m3u8Match = html.match(/sources:\s*\[\s*\{\s*file:\s*['"](https?:\/\/[^'"]+\.m3u8[^'"]*)['"]/i) ||
+                          html.match(/file:\s*['"](https?:\/\/[^'"]+\.m3u8[^'"]*)['"]/i) ||
                           html.match(/['"](https?:\/\/[^'"]+\.m3u8[^'"]*)['"]/i);
         if (m3u8Match && m3u8Match[1]) {
           return res.json({
@@ -341,11 +400,28 @@ async function startServer() {
         }
       }
 
-      // Par défaut : l'embed URL peut être jouée dans notre lecteur sanbox anti-popups
+      // Cas 4 : Uqload
+      if (parsed.hostname.includes('uqload')) {
+        const uqRes = await fetch(embedUrl, {
+          headers: { 'User-Agent': USER_AGENT, 'Referer': 'https://anime-sama.to/' },
+        });
+        const html = await uqRes.text();
+        const m3u8Match = html.match(/(https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)/i);
+        if (m3u8Match && m3u8Match[1]) {
+          return res.json({
+            success: true,
+            streamUrl: m3u8Match[1].replace(/\\/g, ''),
+            type: 'application/x-mpegurl',
+            host: 'Uqload',
+            format: 'hls',
+          });
+        }
+      }
+
       return res.json({
         success: false,
         embedUrl,
-        message: 'Lecteur externe intégré (sécurisé sans popup)',
+        message: 'Lecteur externe intégré',
       });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
