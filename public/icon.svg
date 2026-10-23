@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#1d4ed8" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle with safe padding -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+
+  <!-- TV Display Frame -->
+  <rect x="86" y="96" width="340" height="230" rx="28" fill="#0b1329" stroke="url(#accent)" stroke-width="8" filter="url(#shadow)"/>
+  
+  <!-- Screen Glow & Video Symbol -->
+  <rect x="100" y="110" width="312" height="202" rx="18" fill="url(#glow)"/>
+  
+  <!-- Stand -->
+  <path d="M226 326 L206 376 L306 376 L286 326 Z" fill="#1e293b" stroke="#334155" stroke-width="3"/>
+  <rect x="166" y="376" width="180" height="14" rx="7" fill="#3b82f6"/>
+
+  <!-- Cast Waves in lower-left of screen -->
+  <!-- Wave dot -->
+  <circle cx="140" cy="272" r="10" fill="#ffffff"/>
+  <!-- Inner Wave -->
+  <path d="M140 236 A 36 36 0 0 1 176 272" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+  <!-- Outer Wave -->
+  <path d="M140 206 A 66 66 0 0 1 206 272" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Central Play Arrow -->
+  <polygon points="266,176 336,211 266,246" fill="#ffffff" filter="url(#shadow)"/>
+</svg>

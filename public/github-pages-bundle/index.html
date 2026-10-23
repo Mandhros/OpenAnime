@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>CastFlow - Diffuseur Vidéo Chromecast</title>
+  <meta name="description" content="Diffusez des vidéos MP4 et flux HLS sur votre TV via Chromecast depuis smartphone Android.">
+  
+  <!-- Configuration PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Google Cast Web Sender SDK -->
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  
+  <!-- HLS.js pour le lecteur local (support des flux m3u8) -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: #111827;
+      --card-border: #1f293d;
+      --accent-blue: #2563eb;
+      --accent-blue-hover: #1d4ed8;
+      --accent-cyan: #06b6d4;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* En-tête */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .cast-header-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Bouton officiel Google Cast Launcher */
+    google-cast-launcher {
+      display: inline-block;
+      width: 38px;
+      height: 38px;
+      --connected-color: #3b82f6;
+      --disconnected-color: #94a3b8;
+      cursor: pointer;
+    }
+
+    /* Cartes & sections */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Champ de saisie URL */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="url"] {
+      width: 100%;
+      background: #0d1322;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 44px 14px 14px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="url"]:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+      padding: 4px;
+    }
+
+    /* Boutons d'action */
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--accent-blue-hover);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Barre d'état */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0d1322;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      border: 1px solid var(--card-border);
+    }
+
+    .status-label {
+      color: var(--text-muted);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+    .dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    /* Lecteur vidéo local */
+    .player-container {
+      position: relative;
+      background: black;
+      border-radius: 14px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--card-border);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .player-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 20px;
+      text-align: center;
+    }
+
+    /* Télécommande Chromecast */
+    .remote-panel {
+      display: none;
+      background: linear-gradient(180deg, #131d36 0%, #0d1527 100%);
+      border: 1px solid #2563eb;
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .remote-panel.active {
+      display: block;
+    }
+
+    .remote-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .remote-title {
+      font-weight: 700;
+      color: #93c5fd;
+      font-size: 1rem;
+    }
+
+    .remote-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .ctrl-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 1px solid #3b82f6;
+      color: white;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Historique & flux de test */
+    .sample-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chip {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .chip:hover {
+      background: #334155;
+      color: white;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #0d1322;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      font-size: 0.82rem;
+      gap: 8px;
+    }
+
+    .history-url {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: monospace;
+      color: #94a3b8;
+      flex: 1;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mini-btn {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* PWA Install Banner */
+    .install-banner {
+      display: none;
+      background: linear-gradient(90deg, #1e3a8a, #1e293b);
+      border: 1px solid #3b82f6;
+      border-radius: 12px;
+      padding: 12px 16px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- En-tête avec bouton Cast officiel -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">▶</div>
+        <div>
+          <div class="brand-name">CastFlow</div>
+        </div>
+      </div>
+      <div class="cast-header-wrapper">
+        <!-- Bouton officiel Google Cast Web Sender -->
+        <google-cast-launcher id="castbutton"></google-cast-launcher>
+      </div>
+    </header>
+
+    <!-- Bannière d'installation PWA -->
+    <div id="installBanner" class="install-banner">
+      <div style="font-size: 0.85rem;">
+        <strong>Installer l'application</strong><br>
+        <span style="color: #94a3b8;">Accès rapide plein écran depuis votre écran d'accueil</span>
+      </div>
+      <button id="installBtn" class="btn btn-primary" style="min-height: 36px; padding: 6px 14px; font-size: 0.85rem;">Installer</button>
+    </div>
+
+    <!-- Saisie de l'URL Vidéo -->
+    <section class="card">
+      <h2>1. Lien de la vidéo externe</h2>
+      <div class="input-group">
+        <div class="input-wrapper">
+          <input 
+            type="url" 
+            id="videoUrl" 
+            placeholder="https://exemple.com/video.mp4 ou flux .m3u8" 
+            value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button id="clearBtn" class="clear-btn" title="Effacer">✕</button>
+        </div>
+
+        <div class="button-row">
+          <button id="playLocalBtn" class="btn btn-secondary">
+            <span>▶</span> Lire sur le téléphone
+          </button>
+          <button id="castVideoBtn" class="btn btn-primary">
+            <span>📡</span> Diffuser sur la TV (Cast)
+          </button>
+        </div>
+      </div>
+
+      <!-- Flux d'exemples rapides -->
+      <div style="margin-top: 14px;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Exemples rapides vérifiés :</span>
+        <div class="sample-chips">
+          <button class="chip" onclick="setUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">MP4 - Big Buck Bunny</button>
+          <button class="chip" onclick="setUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">MP4 - Elephants Dream</button>
+          <button class="chip" onclick="setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')">HLS - Big Buck Bunny (.m3u8)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- État Chromecast & Télécommande TV -->
+    <div id="remotePanel" class="remote-panel">
+      <div class="remote-header">
+        <div class="remote-title">Diffusion TV en cours</div>
+        <button id="disconnectCastBtn" class="btn btn-danger" style="min-height: 32px; padding: 4px 10px; font-size: 0.75rem;">
+          Déconnecter
+        </button>
+      </div>
+
+      <div style="font-size: 0.85rem; color: #cbd5e1; word-break: break-all;" id="castCurrentTitle">
+        Vidéo en cours de lecture sur Chromecast
+      </div>
+
+      <div class="remote-controls">
+        <button id="remoteRewindBtn" class="ctrl-btn" title="-10s">⏪</button>
+        <button id="remotePlayPauseBtn" class="ctrl-btn" style="width: 56px; height: 56px; background: #2563eb;" title="Lecture/Pause">⏯</button>
+        <button id="remoteForwardBtn" class="ctrl-btn" title="+10s">⏩</button>
+      </div>
+
+      <!-- Contrôle du volume TV -->
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Volume TV</span>
+        <input type="range" id="remoteVolume" min="0" max="1" step="0.05" value="0.8" style="flex: 1;">
+      </div>
+    </div>
+
+    <!-- Lecteur Vidéo Local (avec HLS.js) -->
+    <section class="card">
+      <h2>2. Lecteur local (smartphone)</h2>
+      <div class="player-container">
+        <video id="localVideo" controls playsinline></video>
+        <div id="playerPlaceholder" class="player-placeholder" style="display: none;">
+          <div>Appuyez sur « Lire sur le téléphone » pour prévisualiser.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Historique des vidéos lues -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2 style="margin-bottom: 0;">Historique récent</h2>
+        <button id="clearHistoryBtn" class="mini-btn">Vider l'historique</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <!-- Rempli en JavaScript -->
+      </div>
+    </section>
+
+    <!-- Informations & Statut -->
+    <div class="status-bar">
+      <span class="status-label">Statut Chromecast :</span>
+      <div class="status-indicator">
+        <div id="statusDot" class="dot"></div>
+        <span id="statusText">Non connecté</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Configuration de base
+    const DEFAULT_APP_ID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID; // CC1AD845
+    let castContext = null;
+    let remotePlayer = null;
+    let remotePlayerController = null;
+    let hls = null;
+
+    const videoInput = document.getElementById('videoUrl');
+    const clearBtn = document.getElementById('clearBtn');
+    const localVideo = document.getElementById('localVideo');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const remotePanel = document.getElementById('remotePanel');
+    const castCurrentTitle = document.getElementById('castCurrentTitle');
+    const historyList = document.getElementById('historyList');
+
+    // Mise à jour de la visibilité du bouton d'effacement
+    videoInput.addEventListener('input', () => {
+      clearBtn.style.display = videoInput.value ? 'block' : 'none';
+    });
+    clearBtn.addEventListener('click', () => {
+      videoInput.value = '';
+      clearBtn.style.display = 'none';
+      videoInput.focus();
+    });
+
+    function setUrl(url) {
+      videoInput.value = url;
+      clearBtn.style.display = 'block';
+    }
+
+    // Initialisation Google Cast Web Sender SDK
+    window['__onGCastApiAvailable'] = function(isAvailable) {
+      if (isAvailable) {
+        initializeCastApi();
+      } else {
+        statusText.textContent = "Cast non disponible";
+      }
+    };
+
+    function initializeCastApi() {
+      try {
+        castContext = cast.framework.CastContext.getInstance();
+        castContext.setOptions({
+          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        });
+
+        remotePlayer = new cast.framework.RemotePlayer();
+        remotePlayerController = new cast.framework.RemotePlayerController(remotePlayer);
+
+        // Écouter l'état de connexion Cast
+        remotePlayerController.addEventListener(
+          cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
+          handleCastConnectionChange
+        );
+
+        // Écouter les changements de lecture
+        remotePlayerController.addEventListener(
+          cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
+          () => {
+            console.log('État du lecteur Cast:', remotePlayer.playerState);
+          }
+        );
+
+        statusText.textContent = "Prêt à diffuser";
+      } catch (e) {
+        console.warn("Erreur d'initialisation Cast SDK:", e);
+      }
+    }
+
+    function handleCastConnectionChange() {
+      if (remotePlayer && remotePlayer.isConnected) {
+        statusDot.classList.add('connected');
+        statusText.textContent = "Connecté à la TV";
+        remotePanel.classList.add('active');
+        // Si une URL est déjà présente, on peut proposer de la lancer
+      } else {
+        statusDot.classList.remove('connected');
+        statusText.textContent = "Non connecté";
+        remotePanel.classList.remove('active');
+      }
+    }
+
+    // Déterminer le type MIME de la vidéo
+    function getContentType(url) {
+      const cleanUrl = url.split('?')[0].toLowerCase();
+      if (cleanUrl.endsWith('.m3u8')) return 'application/x-mpegurl';
+      if (cleanUrl.endsWith('.mpd')) return 'application/dash+xml';
+      if (cleanUrl.endsWith('.webm')) return 'video/webm';
+      return 'video/mp4';
+    }
+
+    // 1. Lecture locale sur smartphone avec HLS.js
+    function playLocal(url) {
+      if (!url) return;
+      saveToHistory(url);
+
+      const contentType = getContentType(url);
+
+      if (contentType === 'application/x-mpegurl') {
+        if (Hls.isSupported()) {
+          if (hls) hls.destroy();
+          hls = new Hls();
+          hls.loadSource(url);
+          hls.attachMedia(localVideo);
+          hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            localVideo.play();
+          });
+        } else if (localVideo.canPlayType('application/vnd.apple.mpegurl')) {
+          // Safari iOS supporte HLS nativement
+          localVideo.src = url;
+          localVideo.play();
+        } else {
+          alert("Votre navigateur ne supporte pas la lecture locale des flux HLS.");
+        }
+      } else {
+        if (hls) {
+          hls.destroy();
+          hls = null;
+        }
+        localVideo.src = url;
+        localVideo.play();
+      }
+    }
+
+    document.getElementById('playLocalBtn').addEventListener('click', () => {
+      playLocal(videoInput.value.trim());
+    });
+
+    // 2. Diffusion sur Chromecast
+    async function castVideo(url) {
+      if (!url) {
+        alert("Veuillez saisir une URL de vidéo.");
+        return;
+      }
+      saveToHistory(url);
+
+      if (!castContext) {
+        alert("Le SDK Google Cast n'est pas encore initialisé ou non supporté.");
+        return;
+      }
+
+      // Si pas encore connecté, demander la sélection du récepteur
+      const session = castContext.getCurrentSession();
+      if (!session) {
+        try {
+          await castContext.requestSession();
+        } catch (err) {
+          console.log("Demande de session annulée ou échouée", err);
+          return;
+        }
+      }
+
+      const activeSession = castContext.getCurrentSession();
+      if (!activeSession) return;
+
+      const mediaInfo = new chrome.cast.media.MediaInfo(url, getContentType(url));
+      mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+      mediaInfo.metadata.title = url.split('/').pop() || 'Vidéo Externe';
+
+      const request = new chrome.cast.media.LoadRequest(mediaInfo);
+      request.autoplay = true;
+
+      activeSession.loadMedia(request).then(
+        () => {
+          castCurrentTitle.textContent = mediaInfo.metadata.title;
+          // Mettre en pause le lecteur local pour économiser la bande passante
+          localVideo.pause();
+        },
+        (errorCode) => {
+          console.error("Erreur de chargement Cast:", errorCode);
+          alert("Erreur lors de la diffusion sur Chromecast. Vérifiez que la vidéo est accessible sans blocage CORS.");
+        }
+      );
+    }
+
+    document.getElementById('castVideoBtn').addEventListener('click', () => {
+      castVideo(videoInput.value.trim());
+    });
+
+    // Commandes de la télécommande Cast
+    document.getElementById('remotePlayPauseBtn').addEventListener('click', () => {
+      if (remotePlayerController) remotePlayerController.playOrPause();
+    });
+
+    document.getElementById('remoteRewindBtn').addEventListener('click', () => {
+      if (remotePlayer && remotePlayerController) {
+        remotePlayer.currentTime = Math.max(0, remotePlayer.currentTime - 10);
+        remotePlayerController.seek();
+      }
+    });
+
+    document.getElementById('remoteForwardBtn').addEventListener('click', () => {
+      if (remotePlayer && remotePlayerController) {
+        remotePlayer.currentTime = remotePlayer.currentTime + 10;
+        remotePlayerController.seek();
+      }
+    });
+
+    document.getElementById('remoteVolume').addEventListener('input', (e) => {
+      if (remotePlayer && remotePlayerController) {
+        remotePlayer.volumeLevel = parseFloat(e.target.value);
+        remotePlayerController.setVolumeLevel();
+      }
+    });
+
+    document.getElementById('disconnectCastBtn').addEventListener('click', () => {
+      if (castContext) castContext.endCurrentSession(true);
+    });
+
+    // Gestion de l'historique local dans localStorage
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('castflow_history') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveToHistory(url) {
+      if (!url) return;
+      let history = getHistory();
+      history = history.filter(item => item !== url);
+      history.unshift(url);
+      if (history.length > 8) history.pop();
+      localStorage.setItem('castflow_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      historyList.innerHTML = '';
+      if (history.length === 0) {
+        historyList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; padding: 8px 0;">Aucune vidéo récente.</div>';
+        return;
+      }
+      history.forEach((url) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+          <span class="history-url" title="${url}">${url}</span>
+          <div class="history-actions">
+            <button class="mini-btn select-btn">Choisir</button>
+            <button class="mini-btn cast-btn" style="background:#1d4ed8;">Cast</button>
+          </div>
+        `;
+        item.querySelector('.select-btn').addEventListener('click', () => setUrl(url));
+        item.querySelector('.cast-btn').addEventListener('click', () => {
+          setUrl(url);
+          castVideo(url);
+        });
+        historyList.appendChild(item);
+      });
+    }
+
+    document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+      localStorage.removeItem('castflow_history');
+      renderHistory();
+    });
+
+    // Enregistrement du Service Worker PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('ServiceWorker enregistré avec succès:', reg.scope))
+          .catch(err => console.log('Échec ServiceWorker:', err));
+      });
+    }
+
+    // Gestion du prompt d'installation PWA
+    let deferredPrompt = null;
+    const installBanner = document.getElementById('installBanner');
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBanner.style.display = 'flex';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installBanner.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBanner.style.display = 'none';
+    });
+
+    // Initialisation affichage
+    renderHistory();
+  </script>
+</body>
+</html>

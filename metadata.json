@@ -1,0 +1,6 @@
+{
+  "name": "CastFlow PWA - Diffuseur Chromecast & Guide GitHub Pages",
+  "description": "Progressive Web App légère pour diffuser des vidéos externes (MP4/HLS) sur TV via Chromecast depuis smartphone Android, avec export de code vanilla et guide GitHub Pages.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
