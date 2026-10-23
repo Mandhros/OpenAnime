@@ -1,6 +1,6 @@
 {
-  "name": "OpenAnime PWA",
-  "description": "Progressive Web App légère pour diffuser des vidéos externes (MP4/HLS) sur TV via Chromecast depuis smartphone Android, avec export de code vanilla et guide GitHub Pages.",
+  "name": "OpenAnime",
+  "description": "Progressive Web App optimisée pour Google Pixel 8 et Android pour visionner Anime-Sama avec sélection automatique des lecteurs, lecture continue des épisodes et diffusion Chromecast sans publicité.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

@@ -158,7 +158,7 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
     };
   }, [episode?.streamUrl, episode?.embedUrl, episode?.isDirectStream]);
 
-  // Synchronisation temporelle et détection de fin
+  // Synchronisation temporelle
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -256,10 +256,10 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
   if (!episode) {
     return (
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8 text-center text-slate-500">
-        <Play className="w-12 h-12 mx-auto mb-3 stroke-[1.5] text-slate-600" />
+        <Play className="w-10 h-10 mx-auto mb-2.5 stroke-[1.5] text-slate-600" />
         <h3 className="text-sm font-semibold text-slate-300">Aucun épisode sélectionné</h3>
         <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-          Choisissez un épisode dans la liste ci-dessous pour lancer la lecture directe sans publicité.
+          Sélectionnez un anime et un épisode dans le catalogue pour lancer la lecture sans publicité.
         </p>
       </div>
     );
@@ -268,11 +268,11 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
   return (
     <div id="cleanPlayerWrapper" className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-2xl space-y-0">
       
-      {/* En-tête du lecteur avec titre, badges et cast */}
-      <div className="p-3.5 sm:p-4 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      {/* En-tête du lecteur compact pour mobile */}
+      <div className="p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-xs sm:text-sm text-white truncate">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-xs sm:text-sm text-white truncate max-w-[200px] sm:max-w-none">
               {episode.animeTitle}
             </span>
             <span className="text-slate-500 text-xs">·</span>
@@ -280,53 +280,51 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
               {episode.seasonName}
             </span>
             <span className="text-slate-500 text-xs">·</span>
-            <span className="text-xs text-amber-300 font-semibold font-mono">
-              Épisode {episode.episodeNumber} / {episode.totalEpisodes}
+            <span className="text-xs text-amber-300 font-bold font-mono">
+              EP {episode.episodeNumber}/{episode.totalEpisodes}
             </span>
           </div>
 
           <div className="flex items-center gap-2 mt-1">
-            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-medium">
+            <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-medium">
               <ShieldCheck className="w-3 h-3" />
-              <span>Zéro Pub / Popups Bloqués</span>
+              <span>Zéro Pub</span>
             </span>
 
-            <span className="text-[10px] text-slate-400 font-mono">
-              Source : {episode.playerName}
+            <span className="text-[10px] text-slate-400 font-mono truncate">
+              {episode.playerName}
             </span>
           </div>
         </div>
 
         {/* Boutons d'action : Cast TV + Enchaînement automatique */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Toggle Enchaînement automatique (Point 5) */}
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <button
             onClick={() => onToggleAutoPlayNext(!autoPlayNext)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95 ${
               autoPlayNext
                 ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'
-                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+                : 'bg-slate-900 text-slate-400 border border-slate-800'
             }`}
-            title="Passe automatiquement à l'épisode suivant à la fin"
+            title="Enchaîne l'épisode suivant automatiquement"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Lecture continue</span>
+            <span className="text-[11px]">Enchaîner</span>
           </button>
 
-          {/* Bouton Cast TV direct */}
           <button
             onClick={() => {
               const targetUrl = episode.streamUrl || episode.embedUrl || '';
               onCastToTV(targetUrl, `${episode.animeTitle} - Épisode ${episode.episodeNumber}`);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-md ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-md active:scale-95 ${
               isCasting
-                ? 'bg-emerald-600 text-white shadow-emerald-600/20'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/20'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
             }`}
           >
             <Tv className="w-3.5 h-3.5" />
-            <span>{isCasting ? `Casting sur ${connectedTVName || 'TV'}` : 'Diffuser TV'}</span>
+            <span>{isCasting ? (connectedTVName || 'TV') : 'Cast TV'}</span>
           </button>
         </div>
       </div>
@@ -334,7 +332,6 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
       {/* Cadre du Lecteur Vidéo */}
       <div className="relative aspect-video w-full bg-black flex items-center justify-center group overflow-hidden">
         
-        {/* Cas A : Stream direct extrait (Sendvid MP4 ou Vidmoly HLS) -> 100% propre dans notre lecteur HTML5 */}
         {episode.isDirectStream && episode.streamUrl ? (
           <>
             <video
@@ -349,31 +346,30 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
 
             {/* Notification de compte à rebours épisode suivant */}
             {nextCountdown !== null && (
-              <div className="absolute top-4 right-4 z-30 bg-slate-900/95 border border-blue-500/60 rounded-xl p-3 shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-3 right-3 z-30 bg-slate-900/95 border border-blue-500/60 rounded-xl p-2.5 shadow-2xl backdrop-blur-md flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2">
                 <div>
-                  <div className="text-xs font-semibold text-white">Épisode suivant dans {nextCountdown}s...</div>
-                  <div className="text-[10px] text-slate-400">Épisode {episode.episodeNumber + 1}</div>
+                  <div className="text-[11px] font-semibold text-white">Épisode suivant dans {nextCountdown}s</div>
+                  <div className="text-[9px] text-slate-400">EP {episode.episodeNumber + 1}</div>
                 </div>
                 <button
                   onClick={triggerAutoNext}
-                  className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium"
+                  className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium"
                 >
                   Passer
                 </button>
                 <button
                   onClick={cancelNextCountdown}
                   className="p-1 text-slate-400 hover:text-white"
-                  title="Annuler"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
-            {/* Barre de contrôles personnalisée */}
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 sm:p-4 space-y-2 opacity-95 group-hover:opacity-100 transition-opacity">
+            {/* Barre de contrôles tactile */}
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-2.5 sm:p-4 space-y-1.5 opacity-95 group-hover:opacity-100 transition-opacity">
               
-              {/* Barre de progression temporelle */}
+              {/* Barre de progression */}
               <div className="flex items-center gap-2">
                 <input
                   type="range"
@@ -386,15 +382,15 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
                 />
               </div>
 
-              {/* Boutons de commandes */}
+              {/* Boutons de commandes tactiles */}
               <div className="flex items-center justify-between text-white text-xs">
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5 sm:gap-3">
                   {/* Précédent */}
                   <button
                     onClick={onPrevEpisode}
                     disabled={!hasPrevEpisode}
-                    className="p-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                    title="Épisode précédent"
+                    className="p-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none active:scale-90"
+                    title="Précédent"
                   >
                     <SkipBack className="w-4 h-4" />
                   </button>
@@ -402,17 +398,16 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
                   {/* Recul 10s */}
                   <button
                     onClick={() => handleSeekRelative(-10)}
-                    className="p-1.5 text-slate-300 hover:text-white transition-colors hidden sm:block"
-                    title="-10 secondes"
+                    className="p-1.5 text-slate-300 hover:text-white active:scale-90"
+                    title="-10s"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
 
-                  {/* Lecture / Pause */}
+                  {/* Play / Pause - Gros bouton ergonomique */}
                   <button
                     onClick={togglePlay}
-                    className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-                    title={isPlaying ? "Pause" : "Lecture"}
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
                   >
                     {isPlaying ? (
                       <Pause className="w-4 h-4 fill-white" />
@@ -424,8 +419,8 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
                   {/* Avance 10s */}
                   <button
                     onClick={() => handleSeekRelative(10)}
-                    className="p-1.5 text-slate-300 hover:text-white transition-colors hidden sm:block"
-                    title="+10 secondes"
+                    className="p-1.5 text-slate-300 hover:text-white active:scale-90"
+                    title="+10s"
                   >
                     <RotateCw className="w-4 h-4" />
                   </button>
@@ -434,31 +429,31 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
                   <button
                     onClick={onNextEpisode}
                     disabled={!hasNextEpisode}
-                    className="p-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                    title="Épisode suivant"
+                    className="p-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none active:scale-90"
+                    title="Suivant"
                   >
                     <SkipForward className="w-4 h-4" />
                   </button>
 
                   {/* Horloge */}
-                  <div className="font-mono text-[11px] text-slate-300 ml-1">
+                  <div className="font-mono text-[10px] sm:text-[11px] text-slate-300 ml-1">
                     <span>{formatTime(currentTime)}</span>
                     <span className="text-slate-500"> / </span>
                     <span>{formatTime(duration)}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Sélecteur de vitesse de lecture */}
-                  <div className="hidden sm:flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-slate-700 text-[10px] font-mono">
+                <div className="flex items-center gap-1.5 sm:gap-3">
+                  {/* Vitesse */}
+                  <div className="flex items-center gap-0.5 bg-slate-900/80 p-0.5 rounded-lg border border-slate-700 text-[9px] font-mono">
                     {[1, 1.25, 1.5].map((speed) => (
                       <button
                         key={speed}
                         onClick={() => handleSpeedChange(speed)}
-                        className={`px-1.5 py-0.5 rounded ${
+                        className={`px-1 py-0.5 rounded ${
                           playbackSpeed === speed
                             ? 'bg-blue-600 text-white font-bold'
-                            : 'text-slate-400 hover:text-slate-200'
+                            : 'text-slate-400'
                         }`}
                       >
                         {speed}x
@@ -467,32 +462,21 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
                   </div>
 
                   {/* Volume */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={toggleMute}
-                      className="p-1.5 text-slate-300 hover:text-white transition-colors"
-                    >
-                      {isMuted || volume === 0 ? (
-                        <VolumeX className="w-4 h-4 text-rose-400" />
-                      ) : (
-                        <Volume2 className="w-4 h-4" />
-                      )}
-                    </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={isMuted ? 0 : volume}
-                      onChange={(e) => handleVolume(parseFloat(e.target.value))}
-                      className="w-16 accent-blue-500 h-1 bg-slate-700 rounded-lg cursor-pointer hidden md:block"
-                    />
-                  </div>
+                  <button
+                    onClick={toggleMute}
+                    className="p-1.5 text-slate-300 hover:text-white"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="w-4 h-4 text-rose-400" />
+                    ) : (
+                      <Volume2 className="w-4 h-4" />
+                    )}
+                  </button>
 
                   {/* Plein écran */}
                   <button
                     onClick={handleFullscreen}
-                    className="p-1.5 text-slate-300 hover:text-white transition-colors"
+                    className="p-1.5 text-slate-300 hover:text-white"
                     title="Plein écran"
                   >
                     <Maximize className="w-4 h-4" />
@@ -503,7 +487,7 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
             </div>
           </>
         ) : (
-          /* Cas B : Lecteur Sandbox Anti-Popups (bloque window.open, popups, redirects) */
+          /* Lecteur Sandbox Anti-Pub */
           <div className="w-full h-full relative bg-slate-950">
             <iframe
               src={episode.embedUrl}
@@ -515,42 +499,39 @@ export const CleanPlayer: React.FC<CleanPlayerProps> = ({
           </div>
         )}
 
-        {/* Message d'erreur s'il y a lieu */}
+        {/* Message d'erreur */}
         {error && (
           <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center z-20">
-            <AlertCircle className="w-8 h-8 text-rose-500 mb-2" />
-            <p className="text-sm font-medium text-rose-300 max-w-sm">{error}</p>
-            <p className="text-xs text-slate-400 mt-1">
-              Vous pouvez basculer sur un autre lecteur en un clic dans la liste des lecteurs.
-            </p>
+            <AlertCircle className="w-7 h-7 text-rose-500 mb-1.5" />
+            <p className="text-xs font-medium text-rose-300 max-w-sm">{error}</p>
           </div>
         )}
       </div>
 
       {/* Barre d'accès rapide sous le lecteur */}
-      <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-2">
+      <div className="p-2.5 sm:p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={onPrevEpisode}
             disabled={!hasPrevEpisode}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-30 disabled:pointer-events-none active:scale-95"
           >
             <SkipBack className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Épisode précédent</span>
+            <span className="text-[11px]">Précédent</span>
           </button>
 
           <button
             onClick={onNextEpisode}
             disabled={!hasNextEpisode}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 disabled:opacity-30 disabled:pointer-events-none transition-colors font-medium"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 disabled:opacity-30 disabled:pointer-events-none active:scale-95 font-medium"
           >
-            <span>Épisode suivant</span>
+            <span className="text-[11px]">Suivant</span>
             <SkipForward className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-slate-500">
-          <span>{autoPlayNext ? '✓ Enchaînement actif' : 'Enchaînement désactivé'}</span>
+        <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+          <span>{autoPlayNext ? '✓ Auto-suivant' : 'Auto désactivé'}</span>
         </div>
       </div>
 

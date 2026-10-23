@@ -30,7 +30,10 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Build static site with Vite
-        run: npm run build
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          echo "Building site with BASE_PATH=/${REPO_NAME}/"
+          BASE_PATH="/${REPO_NAME}/" npm run build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -15,7 +15,9 @@ import {
   ShieldCheck,
   X,
   Server,
-  Settings
+  Settings,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { CurrentPlayingEpisode } from './CleanPlayer';
 import { findPreloadedAnime } from '../data/animeData';
@@ -80,7 +82,6 @@ const PRESET_EXAMPLES = [
 // Détection intelligente de l'adresse de l'API
 export function getApiBase(): string {
   if (typeof window === 'undefined') return '';
-  // Si hébergé sur GitHub Pages (*.github.io), cibler le backend Cloud Run avec CORS
   if (window.location.hostname.includes('github.io')) {
     return 'https://ais-dev-47dswayw2ex543j2f2eodr-146931597221.europe-west2.run.app';
   }
@@ -99,13 +100,14 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<CatalogueData | null>(null);
+  const [showFullSynopsis, setShowFullSynopsis] = useState<boolean>(false);
 
   const [selectedSeason, setSelectedSeason] = useState<SeasonItem | null>(null);
   const [episodesLoading, setEpisodesLoading] = useState<boolean>(false);
   const [episodes, setEpisodes] = useState<EpisodeInfo[]>([]);
   const [searchEp, setSearchEp] = useState<string>('');
 
-  // Lecteur sélectionné automatiquement pour toute la saison (Point 3)
+  // Lecteur sélectionné automatiquement pour toute la saison
   const [availableSeasonPlayers, setAvailableSeasonPlayers] = useState<Array<{
     playerIndex: number;
     name: string;
@@ -115,7 +117,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number | null>(null);
 
   const [resolvingEpNumber, setResolvingEpNumber] = useState<number | null>(null);
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [isUsingPreloaded, setIsUsingPreloaded] = useState<boolean>(false);
 
   // Charger le catalogue
@@ -129,8 +130,9 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
     setAvailableSeasonPlayers([]);
     setSelectedPlayerIndex(null);
     setIsUsingPreloaded(false);
+    setShowFullSynopsis(false);
 
-    // 1. Vérifier d'abord si nous avons des données pré-chargées garanties
+    // 1. Données pré-chargées garanties
     const preloaded = findPreloadedAnime(targetUrl);
     if (preloaded) {
       setData(preloaded);
@@ -142,7 +144,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
       return;
     }
 
-    // 2. Sinon, appel de l'API avec fallback transparent
+    // 2. Sinon appel API avec fallback
     try {
       const apiBase = getApiBase();
       const res = await fetch(`${apiBase}/api/animesama/catalogue?url=${encodeURIComponent(targetUrl.trim())}`);
@@ -155,7 +157,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
         loadSeasonEpisodes(json.url, json.seasons[0]);
       }
     } catch (err: any) {
-      // Si échec réseau, tenter un repli pré-chargé sur mot clé
       const fallback = findPreloadedAnime(targetUrl);
       if (fallback) {
         setData(fallback);
@@ -171,7 +172,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
     }
   };
 
-  // Charger les épisodes d'une saison & Déterminer automatiquement le meilleur lecteur (Point 3)
+  // Charger les épisodes d'une saison & Déterminer automatiquement le meilleur lecteur
   const loadSeasonEpisodes = async (baseUrl: string, season: SeasonItem, preloadedRef?: any) => {
     setSelectedSeason(season);
     setEpisodesLoading(true);
@@ -179,7 +180,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
     setAvailableSeasonPlayers([]);
     setSelectedPlayerIndex(null);
 
-    // 1. Vérifier si les épisodes sont déjà disponibles en cache local pré-chargé
+    // Vérifier si en cache local
     const activeData = preloadedRef || data;
     if (activeData?.seasonEpisodes && activeData.seasonEpisodes[season.path]) {
       const cachedEps: EpisodeInfo[] = activeData.seasonEpisodes[season.path];
@@ -188,7 +189,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
       return;
     }
 
-    // 2. Sinon, appel API
     try {
       const apiBase = getApiBase();
       const res = await fetch(
@@ -203,7 +203,6 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
       applyEpisodes(eps, season.name, data?.title || 'Anime');
     } catch (err: any) {
       console.warn('Erreur épisodes API:', err);
-      // Tentative de secours pré-chargé
       const fallback = findPreloadedAnime(baseUrl);
       if (fallback?.seasonEpisodes && fallback.seasonEpisodes[season.path]) {
         applyEpisodes(fallback.seasonEpisodes[season.path], season.name, fallback.title);
@@ -217,7 +216,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
     setEpisodes(eps);
     onEpisodesLoaded?.(eps, animeTitle, seasonName);
 
-    // Algorithme de sélection automatique du meilleur lecteur (Point 3)
+    // Algorithme de sélection automatique du meilleur lecteur
     const playerStats: Record<number, { name: string; count: number }> = {};
     eps.forEach(ep => {
       ep.players.forEach(p => {
@@ -256,13 +255,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
     fetchCatalogue(catalogUrl);
   }, []);
 
-  const handleCopy = (url: string) => {
-    navigator.clipboard.writeText(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl(null), 2000);
-  };
-
-  // Lancer un épisode dans le lecteur propre (Point 4)
+  // Lancer un épisode dans le lecteur propre
   const handleLaunchEpisode = async (ep: EpisodeInfo) => {
     if (!data || !selectedSeason) return;
 
@@ -324,55 +317,50 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
   );
 
   return (
-    <div className="space-y-6">
-      {/* Barre de recherche d'anime */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-blue-400" />
-              <span>Catalogue & Fiches Anime-Sama</span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Entrez l'URL d'une fiche anime pour extraire automatiquement toutes les saisons, films et épisodes sans popup.
-            </p>
-          </div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Barre de recherche d'anime (Optimisée Pixel 8) */}
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-3.5 sm:p-5 shadow-xl space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xs sm:text-sm font-semibold text-slate-100 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-400" />
+            <span>Fiches Anime-Sama</span>
+          </h2>
 
           {isUsingPreloaded && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[11px] font-medium self-start sm:self-auto">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Mode Rapide Sécurisé</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[10px] font-medium">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Garantie Sans Pub</span>
             </span>
           )}
         </div>
 
-        {/* Input avec bouton Analyser */}
+        {/* Input avec bouton Analyser (Tactile Pixel 8) */}
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="url"
             value={catalogUrl}
             onChange={(e) => setCatalogUrl(e.target.value)}
-            placeholder="https://anime-sama.to/catalogue/nom-de-l-anime/"
-            className="flex-1 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-slate-100 placeholder-slate-500 outline-none transition-all shadow-inner"
+            placeholder="https://anime-sama.to/catalogue/..."
+            className="flex-1 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 placeholder-slate-500 outline-none transition-all shadow-inner"
             spellCheck={false}
           />
           <button
             onClick={() => fetchCatalogue(catalogUrl)}
             disabled={loading}
-            className="h-11 sm:h-auto px-6 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] font-semibold text-xs sm:text-sm text-white flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-500/25 shrink-0 disabled:opacity-50"
+            className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 font-semibold text-xs text-white flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-500/25 shrink-0 disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            <span>Analyser l'anime</span>
+            <span>Analyser</span>
           </button>
         </div>
 
-        {/* Exemples rapides demandés */}
+        {/* Exemples rapides défilables horizontalement au pouce */}
         <div className="pt-2 border-t border-slate-800/80">
-          <div className="text-[11px] text-slate-400 mb-2 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Exemples rapides disponibles immédiatement :</span>
+          <div className="text-[11px] text-slate-400 mb-1.5 flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-amber-400" />
+            <span>Exemples rapides :</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="flex sm:grid sm:grid-cols-3 gap-2 overflow-x-auto no-scrollbar pb-1">
             {PRESET_EXAMPLES.map((ex) => (
               <button
                 key={ex.name}
@@ -380,33 +368,33 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
                   setCatalogUrl(ex.url);
                   fetchCatalogue(ex.url);
                 }}
-                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                className={`p-2 rounded-xl border text-left transition-all shrink-0 min-w-[170px] sm:min-w-0 flex flex-col justify-between active:scale-95 ${
                   catalogUrl === ex.url
                     ? 'bg-blue-950/40 border-blue-500/60 shadow-xs'
                     : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                 }`}
               >
                 <div className="font-medium text-xs text-slate-200 truncate">{ex.name}</div>
-                <div className="text-[10px] text-blue-400 font-mono mt-1">{ex.badge}</div>
+                <div className="text-[10px] text-blue-400 font-mono mt-0.5">{ex.badge}</div>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Erreur */}
+      {/* Message d'erreur */}
       {error && (
-        <div className="rounded-2xl bg-rose-950/30 border border-rose-800/60 p-4 text-xs text-rose-300 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-          <div>{error}</div>
+        <div className="rounded-2xl bg-rose-950/30 border border-rose-800/60 p-3.5 text-xs text-rose-300 flex items-center gap-3">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="flex-1">{error}</div>
         </div>
       )}
 
       {/* Fiche de l'Anime */}
       {data && (
         <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
-          {/* Header Visuel avec Bannière & Poster */}
-          <div className="relative p-5 sm:p-6 bg-gradient-to-t from-slate-900 via-slate-900/90 to-transparent">
+          {/* Header Visuel Responsive pour Pixel 8 */}
+          <div className="relative p-3.5 sm:p-6 bg-gradient-to-t from-slate-900 via-slate-900/95 to-transparent">
             {data.banner && (
               <div 
                 className="absolute inset-0 bg-cover bg-center opacity-20 pointer-events-none blur-xs"
@@ -414,40 +402,51 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
               />
             )}
 
-            <div className="relative flex flex-col sm:flex-row gap-5 items-start">
+            <div className="relative flex gap-3.5 sm:gap-5 items-start">
               {data.poster && (
                 <img
                   src={data.poster}
                   alt={data.title}
-                  className="w-24 sm:w-32 rounded-xl object-cover shadow-2xl border border-slate-700 shrink-0 aspect-[2/3]"
+                  className="w-20 sm:w-28 rounded-xl object-cover shadow-2xl border border-slate-700 shrink-0 aspect-[2/3]"
                 />
               )}
 
-              <div className="flex-1 min-w-0 space-y-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <div className="flex-1 min-w-0 space-y-1 sm:space-y-2">
+                <h1 className="text-base sm:text-xl font-bold text-white tracking-tight leading-tight">
                   {data.title}
                 </h1>
 
                 {data.alterTitles && (
-                  <p className="text-xs text-slate-400 line-clamp-2">
+                  <p className="text-[11px] text-slate-400 truncate">
                     {data.alterTitles}
                   </p>
                 )}
 
                 {data.meta && (
-                  <div className="text-xs text-blue-400 font-medium">
+                  <div className="text-[11px] text-blue-400 font-medium">
                     {data.meta}
                   </div>
                 )}
 
                 {data.synopsis && (
-                  <p className="text-xs text-slate-300 leading-relaxed max-w-3xl line-clamp-3">
-                    {data.synopsis}
-                  </p>
+                  <div className="pt-0.5">
+                    <p className={`text-xs text-slate-300 leading-relaxed ${showFullSynopsis ? '' : 'line-clamp-2'}`}>
+                      {data.synopsis}
+                    </p>
+                    {data.synopsis.length > 120 && (
+                      <button
+                        onClick={() => setShowFullSynopsis(!showFullSynopsis)}
+                        className="text-[10px] text-blue-400 font-medium mt-0.5 flex items-center gap-0.5 hover:underline"
+                      >
+                        <span>{showFullSynopsis ? 'Réduire' : 'Lire la suite'}</span>
+                        {showFullSynopsis ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                    )}
+                  </div>
                 )}
 
-                <div className="flex items-center gap-2 pt-2 text-xs text-slate-400">
-                  <span>{data.seasonsCount} saisons / films répertoriés</span>
+                <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 flex-wrap">
+                  <span>{data.seasonsCount} sections</span>
                   <span>·</span>
                   <a
                     href={data.url}
@@ -455,7 +454,7 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
                     rel="noreferrer"
                     className="text-blue-400 hover:underline flex items-center gap-1"
                   >
-                    <span>Fiche Anime-Sama</span>
+                    <span>Anime-Sama</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -463,28 +462,28 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
             </div>
           </div>
 
-          {/* Sélecteur de Saisons / Films / OAVs */}
-          <div className="border-t border-slate-800 p-4 bg-slate-950/70">
-            <div className="text-xs font-semibold text-slate-300 mb-2.5 flex items-center gap-2">
+          {/* Sélecteur défilable de Saisons / Films / OAVs */}
+          <div className="border-t border-slate-800 p-3 bg-slate-950/70">
+            <div className="text-[11px] font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
               <Film className="w-3.5 h-3.5 text-blue-400" />
-              <span>Saisons, Films & OAVs disponibles :</span>
+              <span>Saisons & Films disponibles :</span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               {data.seasons.map((season) => {
                 const isSelected = selectedSeason?.path === season.path;
                 return (
                   <button
                     key={season.path}
                     onClick={() => loadSeasonEpisodes(data.url, season)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 active:scale-95 ${
                       isSelected
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 scale-[1.02]'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                         : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
                     }`}
                   >
                     <span>{season.name}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    <span className={`text-[9px] px-1 py-0.2 rounded font-mono ${
                       isSelected ? 'bg-blue-700 text-blue-100' : 'bg-slate-800 text-slate-400'
                     }`}>
                       {season.type.toUpperCase()}
@@ -495,38 +494,38 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
             </div>
           </div>
 
-          {/* SÉLECTION AUTOMATIQUE DU LECTEUR POUR LA SAISON (Point 3) */}
+          {/* SÉLECTION AUTOMATIQUE DU LECTEUR POUR LA SAISON */}
           {availableSeasonPlayers.length > 0 && (
-            <div className="p-4 bg-blue-950/20 border-t border-b border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+            <div className="p-3 bg-blue-950/20 border-t border-b border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs text-slate-200 font-semibold">
-                  Lecteur automatique pour la saison :
+                <span className="text-[11px] sm:text-xs text-slate-200 font-semibold">
+                  Lecteur automatique :
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 {availableSeasonPlayers.map((player) => {
                   const isSelected = selectedPlayerIndex === player.playerIndex;
                   return (
                     <button
                       key={player.playerIndex}
                       onClick={() => setSelectedPlayerIndex(player.playerIndex)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all shrink-0 flex items-center gap-1 active:scale-95 ${
                         isSelected
-                          ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
                           : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
                       }`}
                     >
                       <span>{player.name}</span>
                       {player.isRecommended && (
-                        <span className={`text-[9px] px-1 py-0.2 rounded font-bold ${
+                        <span className={`text-[8px] px-1 py-0.2 rounded font-bold ${
                           isSelected ? 'bg-blue-700 text-white' : 'bg-emerald-950 text-emerald-400'
                         }`}>
-                          RECOMMANDÉ
+                          TOP
                         </span>
                       )}
-                      <span className="text-[10px] opacity-70 font-mono">
+                      <span className="text-[9px] opacity-70 font-mono">
                         ({player.count}/{episodes.length})
                       </span>
                     </button>
@@ -536,35 +535,35 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
             </div>
           )}
 
-          {/* Liste des Épisodes */}
-          <div className="p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Liste des Épisodes - Grille optimisée Pixel 8 */}
+          <div className="p-3.5 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">
-                  {selectedSeason ? `Épisodes de : ${selectedSeason.name}` : 'Épisodes'}
+                <span className="text-xs sm:text-sm font-semibold text-white">
+                  {selectedSeason ? selectedSeason.name : 'Épisodes'}
                 </span>
                 {episodes.length > 0 && (
-                  <span className="text-xs text-slate-400 font-mono">
-                    ({episodes.length} épisodes)
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    ({episodes.length})
                   </span>
                 )}
               </div>
 
               {episodes.length > 6 && (
-                <div className="relative w-full sm:w-48">
+                <div className="relative w-36 sm:w-48">
                   <input
                     type="text"
                     value={searchEp}
                     onChange={(e) => setSearchEp(e.target.value)}
-                    placeholder="Filtrer épisode (ex: 3)"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none"
+                    placeholder="Épisode..."
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg px-2.5 py-1 text-xs text-slate-200 outline-none"
                   />
                   {searchEp && (
                     <button
                       onClick={() => setSearchEp('')}
-                      className="absolute right-2 top-2 text-slate-500 hover:text-white"
+                      className="absolute right-2 top-1.5 text-slate-500 hover:text-white"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-3 h-3" />
                     </button>
                   )}
                 </div>
@@ -572,18 +571,19 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
             </div>
 
             {episodesLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center text-slate-400 text-xs gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
-                <span>Chargement des épisodes et sélection du meilleur lecteur...</span>
+              <div className="py-10 flex flex-col items-center justify-center text-slate-400 text-xs gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                <span>Chargement des épisodes...</span>
               </div>
             ) : filteredEpisodes.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-6 text-center text-xs text-slate-500">
                 {episodes.length === 0
                   ? 'Aucun épisode détecté pour cette section.'
                   : 'Aucun épisode ne correspond à votre filtre.'}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
+              /* Grille tactile 2 colonnes sur Pixel 8 (412px), 3 ou 4 colonnes sur tablette/desktop */
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[460px] overflow-y-auto pr-1">
                 {filteredEpisodes.map((ep) => {
                   const isCurrent = currentPlayingNumber === ep.number;
                   const chosenPlayer = ep.players.find(p => p.playerIndex === selectedPlayerIndex) || ep.players[0];
@@ -593,55 +593,48 @@ export const AnimeSamaCatalog: React.FC<AnimeSamaCatalogProps> = ({
                     <div
                       key={ep.number}
                       onClick={() => handleLaunchEpisode(ep)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 group ${
+                      className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 active:scale-98 ${
                         isCurrent
                           ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-500/10'
-                          : 'bg-slate-950/80 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/60'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold transition-colors ${
-                            isCurrent
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-800 text-slate-300 group-hover:bg-blue-600 group-hover:text-white'
-                          }`}>
-                            {ep.number}
-                          </span>
-                          <span className="font-semibold text-xs text-slate-200 truncate">
-                            {ep.title}
-                          </span>
-                        </div>
+                        <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold ${
+                          isCurrent ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200'
+                        }`}>
+                          {ep.number}
+                        </span>
 
-                        {isCurrent && (
-                          <span className="text-[10px] text-blue-400 font-mono font-semibold">
+                        {isCurrent ? (
+                          <span className="text-[9px] text-blue-400 font-mono font-bold">
                             EN COURS
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 font-mono truncate max-w-[80px]">
+                            {chosenPlayer?.name || 'Auto'}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-900">
-                        <span className="truncate">
-                          Lecteur : <strong className="text-slate-300">{chosenPlayer?.name || 'Automatique'}</strong>
-                        </span>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLaunchEpisode(ep);
-                            }}
-                            className="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium flex items-center gap-1 transition-all shadow-xs"
-                          >
-                            {isResolving ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Play className="w-3 h-3 fill-white" />
-                            )}
-                            <span>Lire</span>
-                          </button>
-                        </div>
+                      <div className="text-[11px] font-medium text-slate-200 truncate">
+                        {ep.title}
                       </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLaunchEpisode(ep);
+                        }}
+                        className="w-full py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium flex items-center justify-center gap-1 transition-all shadow-xs active:scale-95"
+                      >
+                        {isResolving ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Play className="w-3 h-3 fill-white" />
+                        )}
+                        <span>Lire</span>
+                      </button>
                     </div>
                   );
                 })}

@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    padding-top: var(--sat);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: #020617;
+  }
+}
+
+/* Utilitaires ergonomiques Google Pixel 8 (412x915, 20:9) */
+@utility pb-safe-nav {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@utility h-screen-dvh {
+  height: 100dvh;
+}
+
+/* Masquage discret des barres de défilement pour les carrousels de saisons sur mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
