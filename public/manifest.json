@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "CastFlow - Diffuseur Chromecast PWA",
-  "short_name": "CastFlow",
-  "description": "Diffusez des vidéos MP4 et flux HLS externes sur votre TV via Chromecast directement depuis votre smartphone Android.",
+  "name": "OpenAnime - Anime-Sama sans pub & Cast",
+  "short_name": "OpenAnime",
+  "description": "Regardez les animes de Anime-Sama sans popups avec sélection automatique de lecteur, lecture enchaînée et diffusion Chromecast.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
