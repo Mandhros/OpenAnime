@@ -1,5 +1,5 @@
-// Service Worker pour CastFlow PWA
-const CACHE_NAME = 'castflow-pwa-v1';
+// Service Worker pour OpenAnime PWA
+const CACHE_NAME = 'openanime-pwa-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
